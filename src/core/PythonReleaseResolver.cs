@@ -88,9 +88,9 @@ public static class PythonReleaseResolver
         return candidates.FirstOrDefault()?.Asset;
     }
 
-    private static bool TryParseAssetVersion(string name, out Version version)
+    private static bool TryParseAssetVersion(string name, out Version? version)
     {
-        version = new Version();
+        version = null;
         if (!name.StartsWith("cpython-", StringComparison.Ordinal))
             return false;
 

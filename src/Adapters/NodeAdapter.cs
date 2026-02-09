@@ -21,7 +21,21 @@ public class NodeAdapter : IEngineAdapter
 
     public string? GetExecutablePath()
     {
-        // Local UPI cache only (portable)
+        var policy = EnginePolicyResolver.GetPolicy();
+
+        var local = GetLocalNpmPath();
+        var global = GetGlobalNpmPath();
+
+        return policy switch
+        {
+            EnginePolicy.LocalOnly => local,
+            EnginePolicy.PreferSystem => global ?? local,
+            _ => local ?? global
+        };
+    }
+
+    private static string? GetLocalNpmPath()
+    {
         string relativePath = OperatingSystem.IsWindows()
             ? "npm.cmd"
             : "bin/npm";
@@ -37,6 +51,17 @@ public class NodeAdapter : IEngineAdapter
 
         EnsureLocalNodeOnPath();
         return localNpm;
+    }
+
+    private static string? GetGlobalNpmPath()
+    {
+        var globalNpm = PathHelper.FindExecutable("npm");
+        var globalNode = PathHelper.FindExecutable("node");
+
+        if (globalNpm != null && globalNode != null)
+            return globalNpm;
+
+        return null;
     }
 
     private static void EnsureLocalNodeOnPath()
@@ -70,21 +95,10 @@ public class NodeAdapter : IEngineAdapter
     public void Execute(string[] args)
     {
         var exePath = GetExecutablePath();
-
         if (exePath == null)
         {
-            Console.WriteLine("🌐 Node/npm not found locally. Installing Node...");
-
-            // Synchronously wait for download/install
-            Bootstrapper.DownloadAsync(this).GetAwaiter().GetResult();
-
-            // Re-check after installation
-            exePath = GetExecutablePath();
-            if (exePath == null)
-            {
-                Console.WriteLine("❌ Failed to install Node/npm.");
-                return;
-            }
+            Console.WriteLine("❌ npm not found.");
+            return;
         }
 
         if (args.Length >= 2 && args[0] == "add")

@@ -16,6 +16,8 @@ if (adapter == null)
     return;
 }
 
+var policy = EnginePolicyResolver.GetPolicy();
+Console.WriteLine($"🔧 Engine policy: {policy}");
 // Try to get the executable
 var exePath = adapter.GetExecutablePath();
 
@@ -44,5 +46,17 @@ if (string.IsNullOrEmpty(exePath))
     }
 }
 
+var comparison = OperatingSystem.IsWindows()
+    ? StringComparison.OrdinalIgnoreCase
+    : StringComparison.Ordinal;
+
+var isLocal = exePath.StartsWith(UpiPaths.NodeEngine, comparison)
+    || exePath.StartsWith(UpiPaths.PythonEngine, comparison);
+
+var source = isLocal ? "local" : "system";
+Console.WriteLine($"🔍 Engine source: {source} ({exePath})");
 // Now Node/Python is installed, forward the command
 adapter.Execute(args);
+
+
+
