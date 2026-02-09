@@ -1,0 +1,19 @@
+{
+  "name": "upi",
+  "version": "0.1.0",
+  "description": "UPI CLI wrapper (downloads the native binary)",
+  "license": "MIT",
+  "bin": {
+    "upi": "bin/upi.js"
+  },
+  "scripts": {
+    "postinstall": "node scripts/install.js"
+  },
+  "files": [
+    "bin/",
+    "scripts/"
+  ],
+  "engines": {
+    "node": ">=16"
+  }
+}

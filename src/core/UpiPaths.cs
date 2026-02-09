@@ -3,10 +3,12 @@ namespace UPI.Core;
 public static class UpiPaths
 {
     public static string Root =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".upi");
+        Environment.GetEnvironmentVariable("UPI_HOME")
+        ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".upi");
 
     public static string Engines =>
-        Path.Combine(Root, "engines");
+        Environment.GetEnvironmentVariable("UPI_ENGINES_DIR")
+        ?? Path.Combine(Root, "engines");
 
     public static string Cache =>
         Path.Combine(Root, "cache");
