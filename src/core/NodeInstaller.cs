@@ -3,26 +3,23 @@ using UPI.Core;
 
 namespace UPI.Core;
 
-public static class Bootstrapper
+public static class NodeInstaller
 {
-    public static async Task DownloadAsync(IEngineAdapter adapter)
-    {
-        UpiPaths.EnsureDirectories();
+    private static readonly string NodeDir = UpiPaths.NodeEngine;
 
-        if (adapter is not NodeAdapter)
+    public static async Task EnsureInstalledAsync()
+    {
+        if (Directory.Exists(NodeDir) && File.Exists(GetNodeExecutable()))
         {
-            Console.WriteLine("⚠️ Bootstrapper not implemented for this adapter yet.");
+            Console.WriteLine($"✅ Node already installed at {NodeDir}");
             return;
         }
 
+        Console.WriteLine("🌍 Downloading Node.js...");
+
+        UpiPaths.EnsureDirectories();
+
         var url = NodeReleaseResolver.GetDownloadUrl();
-        var platform = OperatingSystem.IsWindows() ? "win" :
-                       OperatingSystem.IsLinux() ? "linux" : "darwin";
-        var arch = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture.ToString().ToLower();
-
-        Console.WriteLine($"🌍 Detected Platform: {platform}");
-        Console.WriteLine($"🧠 Detected Arch: {arch}");
-
         var downloadPath = Path.Combine(UpiPaths.Cache, Path.GetFileName(url));
         var tempExtract = Path.Combine(UpiPaths.Cache, "node_extract");
 
@@ -48,7 +45,7 @@ public static class Bootstrapper
             return;
         }
 
-        // 3️⃣ Get extracted folder
+        // 3️⃣ Copy extracted files
         var extractedFolder = Directory.GetDirectories(tempExtract).FirstOrDefault();
         if (extractedFolder == null)
         {
@@ -56,35 +53,48 @@ public static class Bootstrapper
             return;
         }
 
-        // 4️⃣ Remove previous Node engine if exists
-        if (Directory.Exists(UpiPaths.NodeEngine))
-            Directory.Delete(UpiPaths.NodeEngine, true);
+        if (Directory.Exists(NodeDir))
+            Directory.Delete(NodeDir, true);
 
-        // 5️⃣ Copy extracted Node to engines folder
-        DirectoryCopy(extractedFolder, UpiPaths.NodeEngine);
+        DirectoryCopy(extractedFolder, NodeDir);
 
-        // 6️⃣ Set executable permissions for Linux/macOS
+        // 4️⃣ Set executable permissions for Linux/macOS
+        SetExecutables();
+
+        // 5️⃣ Inject Node folder into PATH
+        InjectPath();
+
+        Console.WriteLine($"✅ Node installed successfully at: {NodeDir}");
+    }
+
+    private static void SetExecutables()
+    {
         if (!OperatingSystem.IsWindows())
         {
-            var nodeBin = Path.Combine(UpiPaths.NodeEngine, "bin", "node");
+            var nodeBin = Path.Combine(NodeDir, "bin", "node");
+            var npmBin = Path.Combine(NodeDir, "bin", "npm");
+
             if (File.Exists(nodeBin))
                 PlatformHelper.SetExecutablePermission(nodeBin);
-
-            var npmBin = Path.Combine(UpiPaths.NodeEngine, "bin", "npm");
             if (File.Exists(npmBin))
                 PlatformHelper.SetExecutablePermission(npmBin);
         }
+    }
 
-        // 7️⃣ Inject Node folder into current PATH (Windows + Linux/macOS)
-        var nodeDir = OperatingSystem.IsWindows()
-            ? UpiPaths.NodeEngine               // node.exe lives here on Windows
-            : Path.Combine(UpiPaths.NodeEngine, "bin"); // bin/ for Linux/macOS
+    private static void InjectPath()
+    {
+        var nodePath = OperatingSystem.IsWindows()
+            ? NodeDir
+            : Path.Combine(NodeDir, "bin");
 
         var currentPath = Environment.GetEnvironmentVariable("PATH") ?? string.Empty;
-        Environment.SetEnvironmentVariable("PATH", $"{nodeDir}{Path.PathSeparator}{currentPath}");
-
-        Console.WriteLine($"✅ Node installed successfully at: {UpiPaths.NodeEngine}");
+        Environment.SetEnvironmentVariable("PATH", $"{nodePath}{Path.PathSeparator}{currentPath}");
     }
+
+    private static string GetNodeExecutable()
+        => OperatingSystem.IsWindows()
+            ? Path.Combine(NodeDir, "node.exe")
+            : Path.Combine(NodeDir, "bin", "node");
 
     private static void DirectoryCopy(string sourceDir, string destDir)
     {

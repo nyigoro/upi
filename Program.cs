@@ -16,25 +16,33 @@ if (adapter == null)
     return;
 }
 
-// Attempt to get executable path
+// Try to get the executable
 var exePath = adapter.GetExecutablePath();
 
-// If executable not found
 if (string.IsNullOrEmpty(exePath))
 {
-    Console.WriteLine($"⚠️ {adapter.Name} not found locally. Installing portable version...");
-    
-    // Automatically download & install
-    await Bootstrapper.DownloadAsync(adapter);
+    Console.WriteLine($"⚠️ {adapter.Name} not found.");
+    Console.Write("Install portable version? (y/n): ");
 
-    // Re-check after installation
-    exePath = adapter.GetExecutablePath();
-    if (string.IsNullOrEmpty(exePath))
+    if (Console.ReadKey().Key == ConsoleKey.Y)
     {
-        Console.WriteLine($"❌ Failed to install {adapter.Name}.");
+        Console.WriteLine();
+        // ✅ Bootstrap Node or Python
+        await Bootstrapper.DownloadAsync(adapter);
+
+        // Retry getting executable path
+        exePath = adapter.GetExecutablePath();
+        if (string.IsNullOrEmpty(exePath))
+        {
+            Console.WriteLine($"❌ Failed to install {adapter.Name}.");
+            return;
+        }
+    }
+    else
+    {
         return;
     }
 }
 
-// Forward arguments to adapter
+// Now Node/Python is installed, forward the command
 adapter.Execute(args);

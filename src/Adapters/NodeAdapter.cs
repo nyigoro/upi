@@ -21,18 +21,50 @@ public class NodeAdapter : IEngineAdapter
 
     public string? GetExecutablePath()
     {
-        // 1️⃣ Check system PATH first
-        var globalNpm = PathHelper.FindExecutable("npm");
-        if (globalNpm != null)
-            return globalNpm;
-
-        // 2️⃣ Check local UPI cache
+        // Local UPI cache only (portable)
         string relativePath = OperatingSystem.IsWindows()
             ? "npm.cmd"
             : "bin/npm";
 
         var localNpm = Path.Combine(UpiPaths.NodeEngine, relativePath);
-        return File.Exists(localNpm) ? localNpm : null;
+
+        var localNode = OperatingSystem.IsWindows()
+            ? Path.Combine(UpiPaths.NodeEngine, "node.exe")
+            : Path.Combine(UpiPaths.NodeEngine, "bin", "node");
+
+        if (!File.Exists(localNpm) || !File.Exists(localNode))
+            return null;
+
+        EnsureLocalNodeOnPath();
+        return localNpm;
+    }
+
+    private static void EnsureLocalNodeOnPath()
+    {
+        var nodePath = OperatingSystem.IsWindows()
+            ? UpiPaths.NodeEngine
+            : Path.Combine(UpiPaths.NodeEngine, "bin");
+
+        var currentPath = Environment.GetEnvironmentVariable("PATH") ?? string.Empty;
+        if (PathContains(currentPath, nodePath))
+            return;
+
+        Environment.SetEnvironmentVariable("PATH", $"{nodePath}{Path.PathSeparator}{currentPath}");
+    }
+
+    private static bool PathContains(string pathList, string path)
+    {
+        var comparison = OperatingSystem.IsWindows()
+            ? StringComparison.OrdinalIgnoreCase
+            : StringComparison.Ordinal;
+
+        foreach (var entry in pathList.Split(Path.PathSeparator))
+        {
+            if (string.Equals(entry.Trim(), path, comparison))
+                return true;
+        }
+
+        return false;
     }
 
     public void Execute(string[] args)

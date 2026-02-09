@@ -6,7 +6,7 @@ public class PythonAdapter : IEngineAdapter
 {
     public string Name => "Python (pip)";
     public string[] ProjectFiles => ["requirements.txt", "pyproject.toml"];
-    public string DownloadUrl => "https://www.python.org/downloads/";
+    public string DownloadUrl => "https://github.com/astral-sh/python-build-standalone/releases";
 
     public bool DetectProject(string directory)
     {
@@ -21,35 +21,45 @@ public class PythonAdapter : IEngineAdapter
 
     public string? GetExecutablePath()
     {
-        // pip is often pip3 on Linux/macOS
-        var globalPip = PathHelper.FindExecutable("pip") ?? PathHelper.FindExecutable("pip3");
-        if (globalPip != null)
-            return globalPip;
+        if (OperatingSystem.IsWindows())
+        {
+            var python = Path.Combine(UpiPaths.PythonEngine, "python.exe");
+            return File.Exists(python) ? python : null;
+        }
 
-        var localPath = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-            ".upi",
-            "bin",
-            OperatingSystem.IsWindows() ? "pip.exe" : "pip"
-        );
+        var python3 = Path.Combine(UpiPaths.PythonEngine, "bin", "python3");
+        if (File.Exists(python3))
+            return python3;
 
-        return File.Exists(localPath) ? localPath : null;
+        var python = Path.Combine(UpiPaths.PythonEngine, "bin", "python");
+        return File.Exists(python) ? python : null;
     }
 
     public void Execute(string[] args)
     {
-        var exePath = GetExecutablePath();
-        if (exePath == null)
+        var python = GetExecutablePath();
+
+        if (python == null)
         {
-            Console.WriteLine("❌ pip not found.");
-            return;
+            Console.WriteLine("Python not found locally. Installing Python...");
+
+            // Synchronously wait for download/install
+            Bootstrapper.DownloadAsync(this).GetAwaiter().GetResult();
+
+            // Re-check after installation
+            python = GetExecutablePath();
+            if (python == null)
+            {
+                Console.WriteLine("Failed to install Python.");
+                return;
+            }
         }
 
         if (args.Length >= 2 && args[0] == "add")
         {
             var pkg = args[1];
             Console.WriteLine($"🚀 UPI Forwarding: pip install {pkg}");
-            ProcessRunner.Run(exePath, $"install {pkg}");
+            ProcessRunner.Run(python, $"-m pip install {pkg}");
             return;
         }
 

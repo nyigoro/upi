@@ -12,7 +12,10 @@ public static class UpiPaths
         Path.Combine(Root, "cache");
 
     public static string NodeEngine =>
-        Path.Combine(Engines, "node", NodeReleaseResolver.Version);
+        Path.Combine(Engines, "node");
+
+    public static string PythonEngine =>
+        Path.Combine(Engines, "python");
 
     public static void EnsureDirectories()
     {
@@ -20,5 +23,6 @@ public static class UpiPaths
         Directory.CreateDirectory(Engines);
         Directory.CreateDirectory(Cache);
         Directory.CreateDirectory(NodeEngine);
+        Directory.CreateDirectory(PythonEngine);
     }
 }
