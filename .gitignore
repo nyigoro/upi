@@ -1,0 +1,43 @@
+# .NET build outputs
+bin/
+obj/
+*.user
+*.suo
+*.ncrunch*
+*.resharper
+*.vs/
+
+# Rider / JetBrains
+.idea/
+*.sln.iml
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Node/npm
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+.venv
+venv/
+
+# UPI caches and engines
+.upi/
+*.zip
+*.tar.gz
+*.tar.xz
+# Your local UPI paths
+src/core/cache/
+src/core/engines/
+
+# Logs
+*.log
