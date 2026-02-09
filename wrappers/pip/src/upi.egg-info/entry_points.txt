@@ -1,0 +1,2 @@
+[console_scripts]
+upi = upi.cli:main

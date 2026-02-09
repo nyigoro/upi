@@ -1,0 +1,10 @@
+README.md
+pyproject.toml
+src/upi/__init__.py
+src/upi/cli.py
+src/upi/installer.py
+src/upi.egg-info/PKG-INFO
+src/upi.egg-info/SOURCES.txt
+src/upi.egg-info/dependency_links.txt
+src/upi.egg-info/entry_points.txt
+src/upi.egg-info/top_level.txt
